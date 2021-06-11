@@ -1,0 +1,83 @@
+{% extends 'wrapper.html' %}
+
+{% block title %}
+	{{ page_name }}
+{% endblock %}
+
+{% block content %}
+	{% load bootstrap4 %}
+	<script>
+		$(document).ready(function () {
+			$("#id_content").summernote({
+				lang: 'ru-RU',
+			});
+		})
+	</script>
+	<div class="add-article">
+		<h1>{{ page_name }}</h1>
+		{% if article %}
+			<form action="{% url 'news:edit_article' article.pk %}" method="POST" enctype="multipart/form-data">
+				{% csrf_token %}
+				{{ form.as_p }}
+				<div class="buttons">
+					<a href="{% url 'news:detail' article.pk  %}" class="article-link">НАЗАД</a>
+					<span class="delete-btn" id="delete-article">УДАЛИТЬ</span>
+					<button type="submit" class="submit-button">{{ button_text }}</button>
+				</div>
+			</form>
+		{% elif page_name == 'Публикация статьи' %}
+			<form action="{% url 'news:add_article' %}" method="POST" enctype="multipart/form-data">
+				{% csrf_token %}
+				{{ form.as_p }}
+				<div class="buttons">
+					<a href="{% url 'news:index' %}" class="article-link">НАЗАД</a>
+					<button type="submit" class="submit-button">{{ button_text }}</button>
+				</div>
+			</form>
+		{% elif page_name == 'Удаление аккаунта' %}
+			<form action="{% url 'news:delete_profile' %}" method="POST">
+				{% csrf_token %}
+				{{ delete_form.as_p }}<br><br>
+				<div class="buttons">
+					<a href="{% url 'news:profile' user.pk %}" class="article-link">НАЗАД</a>
+					<button class="delete-btn account-delete-btn">УДАЛИТЬ</button>
+				</div>
+			</form>
+		{% elif page_name == 'Изменение пароля' %}
+			<form action="{% url 'news:change_password' %}" method="POST">
+				{% csrf_token %}
+				{% bootstrap_form form layout='horizontal' %}
+				<div class="buttons">
+					<a href="{% url 'news:profile' user.pk %}" class="article-link">НАЗАД</a>
+					<button class="submit-button">Изменить</button>
+				</div>
+			</form>
+		{% endif %}
+	</div>
+	{% if article %}
+		<div id="overlay"></div>
+		<div class="delete-confirm" align="center">
+			<h3>Вы действительно хотите удалить статью?</h3>
+			<div class="buttons">
+				<form action="{% url 'news:delete_article' article.pk %}" method="POST">
+					{% csrf_token %}	
+					<button class="delete-btn">ДА</button>
+				</form>
+				<span class="submit-button">НЕТ</span>
+			</div>
+		</div>
+		<script>
+			$(document).ready(function () {
+				$("#delete-article").click(function () {
+					$("#overlay").attr("class", "overlay");
+					$(".delete-confirm").show();
+				});
+				$(".delete-confirm .submit-button").click(function () {
+					$("#overlay").attr("class", "");
+					$(".delete-confirm").hide();
+				});
+			});
+		</script>
+	{% endif %}
+	
+{% endblock %}

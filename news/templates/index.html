@@ -1,0 +1,185 @@
+{% extends 'wrapper.html' %}
+
+{% block title %}
+	Project name
+{% endblock %}
+
+{% block content %}
+	{% load static %}
+	{% load bootstrap4 %}
+	{% if show %}
+		<div class="sort-links index-sort-links">
+			<button type="button" id="show-sort" class="active">ПОКАЗАТЬ ЗА</button>
+			{% if show == 'week' %}
+				<a href="{% url 'news:index' %}" id="day">СУТКИ</a>
+				<a href="{% url 'news:index' %}?show=week" id="week" class="active">НЕДЕЛЯ</a>
+				<a href="{% url 'news:index' %}?show=month" id="month">МЕСЯЦ</a>
+				<a href="{% url 'news:index' %}?show=subscribes" id="subscribes">ПОДПИСКИ</a>
+				<a href="{% url 'news:index' %}?show=year">ГОД</a>
+			{% elif show == 'month' %}
+				<a href="{% url 'news:index' %}" id="day">СУТКИ</a>
+				<a href="{% url 'news:index' %}?show=week" id="week">НЕДЕЛЯ</a>
+				<a href="{% url 'news:index' %}?show=month" id="month" class="active">МЕСЯЦ</a>
+				<a href="{% url 'news:index' %}?show=subscribes" id="subscribes">ПОДПИСКИ</a>
+				<a href="{% url 'news:index' %}?show=year">ГОД</a>
+			{% elif show == 'subscribes' %}
+				<a href="{% url 'news:index' %}" id="day" >СУТКИ</a>
+				<a href="{% url 'news:index' %}?show=week" id="week">НЕДЕЛЯ</a>
+				<a href="{% url 'news:index' %}?show=month" id="month">МЕСЯЦ</a>
+				<a href="{% url 'news:index' %}?show=subscribes" id="subscribes" class="active">ПОДПИСКИ</a>
+				<a href="{% url 'news:index' %}?show=year">ГОД</a>
+			{% elif show == 'year' %}
+				<a href="{% url 'news:index' %}" id="day" >СУТКИ</a>
+				<a href="{% url 'news:index' %}?show=week" id="week">НЕДЕЛЯ</a>
+				<a href="{% url 'news:index' %}?show=month" id="month">МЕСЯЦ</a>
+				<a href="{% url 'news:index' %}?show=subscribes" id="subscribes">ПОДПИСКИ</a>
+				<a href="{% url 'news:index' %}?show=year" class="active">ГОД</a>
+			{% elif show == 'day' %}
+				<a href="{% url 'news:index' %}" id="day" class="active">СУТКИ</a>
+				<a href="{% url 'news:index' %}?show=week" id="week">НЕДЕЛЯ</a>
+				<a href="{% url 'news:index' %}?show=month" id="month">МЕСЯЦ</a>
+				<a href="{% url 'news:index' %}?show=subscribes" id="subscribes">ПОДПИСКИ</a>
+				<a href="{% url 'news:index' %}?show=year">ГОД</a>
+			{% endif %}
+		</div>
+	{% endif %}
+	<div class="index">
+		<div class="articles">
+			{% if show_rubrics %}
+				<div class="rubric-sorts">
+					<h1 class="rubric-h1">{{ rubric }}</h1><br>
+					<h3>Сортировать по:</h3><br>
+					<div>
+						{% if sort == 'views' %}
+							<a href="{% url 'news:rubric' rubric.pk %}" class="rubric-sort" id="rubric-first">НОВИЗНЕ</a>
+							<a href="{% url 'news:rubric' rubric.pk %}?sort=views" class="rubric-sort active" id="rubric-second">ПОПУЛЯРНОСТИ</a>
+						{% else %}
+							<a href="{% url 'news:rubric' rubric.pk %}" class="rubric-sort active" id="rubric-first">НОВИЗНЕ</a>
+							<a href="{% url 'news:rubric' rubric.pk %}?sort=views" class="rubric-sort" id="rubric-second">ПОПУЛЯРНОСТИ</a>
+						{% endif %}
+					</div>
+				</div>
+			{% endif %}
+			{% if articles %}
+				{% bootstrap_pagination page size='none' url=all %}
+				{% for article in articles %}
+					<div class="article-title">
+						<div class="index-author">
+							<div>
+								{% if article.author.avatar and article.author.is_active %}
+									<img src="{{ article.author.avatar.url }}">
+								{% else %}
+									<img src="{% static 'img/user.png' %}">
+								{% endif %}
+							</div>
+							<div>
+								{% if article.author.is_active %}
+									<a href="{% url 'news:profile' article.author.pk %}"><b>{{ article.author }}</b></a>
+								{% else %}
+									<span class="deleted-username">(пользователь удален)</span>
+								{% endif %}
+								&nbsp;{{ article.pub_date|timesince }} назад
+							</div>
+						</div>
+						<h1><a href="{% url 'news:detail' article.pk %}">{{ article.title }}</a></h1>
+						<a href="{% url 'news:rubric' article.rubric.pk %}" class="rubric-link">{{ article.rubric }}</a>
+						{% if article.image %}
+							<br><img src="{{ article.image.url }}" class="index-miniature">
+						{% endif %}
+						<div class="article-content">{{ article.content|truncatewords:200|safe }}</div>
+						<a href="{% url 'news:detail' article.pk %}" class="article-link">Читать дальше</a>
+						<div class="article-icons">
+							<img src="{% static 'img/views_count.png' %}"><span>{{ article.views }}</span>
+							<a href="{% url 'news:detail' article.pk %}#comments">
+								<img src="{% static 'img/comments_count.png' %}"><span>{{ article.comment_set.all|length }}</span>
+							</a>
+							<a href="{% url 'news:detail' article.pk %}?show=liked_users">
+								<img src="{% static 'img/like-index.png' %}" class="like-index"><span>{{ article.advuser_set.all|length }}</span>
+							</a>
+						</div>
+					</div>
+				{% endfor %}
+				{% bootstrap_pagination page size='none' url=all %}
+			{% else %}
+				{% if show == 'subscribes' %}
+					{% if user.is_authenticated %}
+						<h1 class="articles">Статей 0</h1>
+					{% else %}
+						<h1 class="articles">Вы не вошли в аккаунт</h1>
+					{% endif %}
+				{% else %}
+					<h1 class="articles">Статей 0</h1>
+				{% endif %}
+			{% endif %}
+		</div>
+		<div class="right-block">
+			<div class="statistic-block index-categories">
+				<h3>РУБРИКИ</h3><hr>
+				{% for rubric in rubrics %}
+					<a href="{% url 'news:rubric' rubric.pk %}">{{ rubric }}</a>
+				{% endfor %}
+			</div>
+			<div class="statistic-block subscribe-profiles">
+				<h3>ПОДПИСКИ</h3><hr>
+				{% if user.is_authenticated %}
+					{% if subscribes %}
+						{% for i in subscribes %}
+							<div class="subscribe-profile">
+								<div>
+									{% if i.avatar and i.is_active %}
+										<img src="{{ i.avatar.url }}">
+									{% else %}
+										<img src="{% static 'img/user.png' %}">
+									{% endif %}
+									{% if i.is_active %}
+										<a href="{% url 'news:profile' i.pk %}" class="rubric-link">{{ i.username }}</a>
+									{% else %}
+										<span class="deleted-username">(пользователь удален)</span>
+									{% endif %}
+								</div>
+							</div>
+						{% endfor %}
+						{% if subscribes_count > 5 %}
+							<div class="show-subscribes">
+								<a href="{% url 'news:users' %}?show=subscribes" class="show-subscribes" align="center">Посмотреть все</a>
+							</div>
+						{% endif %}
+					{% else %}
+						<p>Вы не подписаны ни на одного пользователя</p>
+					{% endif %}
+				{% else %}
+					<p>Вы не вошли в аккаунт</p>
+				{% endif %}
+			</div>
+			<div class="statistic-block subscribe-profiles">
+				<h3>ЛУЧШИЕ АВТОРЫ</h3><hr>
+				{% for i in authors %}
+					<div class="subscribe-profile">
+						<div class="subscribe-avatar">
+							{% if i.avatar %}
+								<img src="{{ i.avatar.url }}">
+							{% else %}
+								<img src="{% static 'img/user.png' %}">
+							{% endif %}
+							<a href="{% url 'news:profile' i.pk %}" class="rubric-link">{{ i.username }}</a>
+						</div>
+						<div class="publication_count" title="{{ i.publications }} публикации">
+							{{ i.publications }}
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+	<script>
+		$(document).ready(function () {
+			$("#show-sort").click(function () {
+				if ($(".sort-links a").is(":visible")) {
+					$(".sort-links a").hide();
+				} else {
+					$(".sort-links a").css("display", "inline");
+				}
+			});
+		});
+	</script>
+{% endblock %}

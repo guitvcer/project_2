@@ -1,0 +1,6 @@
+{{ user.username }} выложил еще одну новую статью
+
+<a href="{{ address }}{% url 'news:detail' article.pk %}">{{ article.title }}</a>
+
+<p>{{ article.content|truncatewords:200|safe }}</p>
+<a href="{{ address }}{% url 'news:detail' article.pk %}">Читать дальше</a>

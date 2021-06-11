@@ -1,0 +1,515 @@
+{% extends 'wrapper.html' %}
+
+{% block title %}
+	{{ user_data.username }} - Профиль
+{% endblock %}
+
+{% block content %}
+	{% load static %}
+	{% load bootstrap4 %}
+	{% url 'news:profile' user_data.pk as url %}
+	<script>
+		$(document).ready(function () {
+			$("#id_comment_text").summernote({
+				lang: 'ru-RU'
+			});
+			$(".edit-textarea").summernote({
+				lang: 'ru-RU',
+			});
+		});
+	</script>
+	<div class="user-data">
+		<div class="data">
+			<div class="user-subscribe">
+				{% if user_data.username|length > 12 %}
+					<h1 class="small-username">{{ user_data.username }}</h1>
+				{% else %}
+					<h1>{{ user_data.username }} - Профиль</h1><br>
+				{% endif %}
+				{% if user_data.is_active %}
+					{% if user_data.pk == user.pk %}
+						<a href="{% url 'news:edit_profile' %}" class="article-link change-profile">ИЗМЕНИТЬ ПРОФИЛЬ</a>
+					{% elif subscribed %}
+						<a href="{% url 'news:subscribe' user_data.pk %}" class="article-link subscribed">ОТПИСАТЬСЯ</a>
+					{% elif not subscribed %}
+						<a href="{% url 'news:subscribe' user_data.pk %}" class="article-link" title="Подпишитесь на пользователя, чтобы следить за его новостями">ПОДПИСАТЬСЯ</a>
+					{% endif %}
+				{% endif %}
+			</div>
+			{% if not user_data.private and user_data.is_active or user.pk == user_data.pk and user_data.is_active %}
+				<div class="sort-links profile-links" id="sort-links">
+					<button type="button" id="show-sort">ПОКАЗАТЬ</button>
+					{% if show == 'publications' %}
+						<a href="{{ url }}" id="information">ИНФОРМАЦИЯ</a>
+						<a href="{{ url }}?show=publications" id="publications" class="active">ПУБЛИКАЦИИ</a>
+						<a href="{{ url }}?show=subscribes" id="subscribes">ПОДПИСЧИКИ</a>
+						<a href="{{ url }}?show=favourites" id="favourites">ИЗБРАННОЕ</a>
+					{% elif show == 'subscribes' %}
+						<a href="{{ url }}" id="information">ИНФОРМАЦИЯ</a>
+						<a href="{{ url }}?show=publications" id="publications">ПУБЛИКАЦИИ</a>
+						<a href="{{ url }}?show=subscribes" id="subscribes" class="active">ПОДПИСЧИКИ</a>
+						<a href="{{ url }}?show=favourites" id="favourites">ИЗБРАННОЕ</a>
+					{% elif show == 'favourites' %}
+						<a href="{{ url }}" id="information">ИНФОРМАЦИЯ</a>
+						<a href="{{ url }}?show=publications" id="publications">ПУБЛИКАЦИИ</a>
+						<a href="{{ url }}?show=subscribes" id="subscribes">ПОДПИСЧИКИ</a>
+						<a href="{{ url }}?show=favourites" id="favourites" class="active">ИЗБРАННОЕ</a>
+					{% else %}
+						<a href="{{ url }}" id="information" class="active">ИНФОРМАЦИЯ</a>
+						<a href="{{ url }}?show=publications" id="publications">ПУБЛИКАЦИИ</a>
+						<a href="{{ url }}?show=subscribes" id="subscribes">ПОДПИСЧИКИ</a>
+						<a href="{{ url }}?show=favourites" id="favourites">ИЗБРАННОЕ</a>
+					{% endif %}
+				</div>
+			{% endif %}
+			{% if user_data.private and user.pk == user_data.pk %}
+				<p class="p">Ваш аккаунт приватный, другие пользователи не могут смотреть информацию Вашего профиля.</p>
+			{% endif %}
+			{% if not user_data.private and user_data.is_active or user.pk == user_data.pk and user_data.is_active %}
+				{% if show == 'publications' %}
+					<div class="publications articles" id="profile-publications">
+						<h2 id="publications-h2">Публикации {{ publications_count }}</h2>
+						{% if publications_count > 0 %}
+							{% bootstrap_pagination page size='none' url=all %}
+						{% endif %}
+						{% for article in publications %}
+							<div class="article-title">
+								<div class="index-author">
+									<div>
+										{% if article.author.avatar and article.author.is_active %}
+											<img src="{{ article.author.avatar.url }}">
+										{% else %}
+											<img src="{% static 'img/user.png' %}">
+										{% endif %}
+									</div>
+									<div>
+										{% if article.author.is_active %}
+											<a href="{% url 'news:profile' article.author.pk %}"><b>{{ article.author }}</b></a>
+										{% else %}
+											<span class="deleted-username">(пользователь удален)</span>
+										{% endif %}
+										&nbsp;{{ article.pub_date|timesince }} назад
+									</div>
+								</div>
+								<h1><a href="{% url 'news:detail' article.pk %}">{{ article.title }}</a></h1>
+								<a href="{% url 'news:rubric' article.rubric.pk %}" class="rubric-link">{{ article.rubric }}</a>
+								{% if article.image %}
+									<br><img src="{{ article.image.url }}" class="index-miniature">
+								{% endif %}
+								<p>{{ article.content|truncatewords:200|safe }}</p>
+								<a href="{% url 'news:detail' article.pk %}" class="article-link">Читать дальше</a>
+								<div class="article-icons">
+									<img src="{% static 'img/views_count.png' %}"><span>{{ article.views }}</span>
+									<a href="{% url 'news:detail' article.pk %}#comments">
+										<img src="{% static 'img/comments_count.png' %}"><span>{{ article.comment_set.all|length }}</span>
+									</a>
+									<a href="{% url 'news:detail' article.pk %}?show=liked_users">
+										<img src="{% static 'img/like-index.png' %}" class="like-index"><span>{{ article.advuser_set.all|length }}</span>
+									</a>
+								</div>
+							</div>
+						{% endfor %}
+						{% if publications_count > 0 %}
+							{% bootstrap_pagination page size='none' url=all %}
+						{% endif %}
+					</div>
+				{% elif show == 'subscribes' %}
+					<div class="subscribes">
+						<h2 id="subscribes-h2">Подписчики {{ subscribers|length }}</h2>
+						{% if subscribers|length > 0 %}
+							{% bootstrap_pagination page size='none' url=all %}
+						{% endif %}
+						<div class="articles">
+							{% for user_subscriber in subscribers %}
+								<div class="user-block">
+									<div>
+										<a href="{% url 'news:profile' user_subscriber.pk %}">
+											{% if user_subscriber.avatar and user_data.is_active %}
+												<img src="{{ user_subscriber.avatar.url }}">
+											{% else %}
+												<img src="{% static 'img/user.png' %}">
+											{% endif %}<br>
+										</a>
+									</div>
+									<div>
+										{% if user_subscriber.is_active %}
+											<h3><a href="{% url 'news:profile' user_subscriber.pk %}" class="rubric-link">{{ user_subscriber.username|truncatechars:10 }}</a></h3>
+										{% else %}
+											<span class="deleted-username">(пользователь удален)</span>
+										{% endif %}
+									</div>
+									<div>
+										<span>
+											Последний вход<br>
+											<b>
+												{% if user_subscriber.last_login %}
+													{{ user_subscriber.last_login }}
+												{% else %}
+													Никогда
+												{% endif %}
+											</b>
+										</span>
+									</div>
+								</div>
+							{% endfor %}
+						</div>
+						{% if subscribers|length > 1 %}
+							{% bootstrap_pagination page size='none' url=all %}
+						{% endif %}
+					</div>
+				{% elif show == 'favourites' %}
+					<div class="articles favourites">
+						<h2 id="favourites-h2">Избранное {{ favourites_count }}</h2>
+						{% if favourites_count > 0 %}
+							{% bootstrap_pagination page size='none' url=all %}
+						{% endif %}
+						{% for article in favourites %}
+							<div class="article-title">
+								<div class="index-author">
+									<div>
+										{% if article.author.avatar and article.author.is_active %}
+											<img src="{{ article.author.avatar.url }}">
+										{% else %}
+											<img src="{% static 'img/user.png' %}">
+										{% endif %}
+									</div>
+									<div>
+										{% if article.author.is_active %}
+											<a href="{% url 'news:profile' article.author.pk %}"><b>{{ article.author }}</b></a>
+										{% else %}
+											<span class="deleted-username">(пользователь удален)</span>
+										{% endif %}
+										&nbsp;{{ article.pub_date|timesince }} назад
+									</div>
+								</div>
+								<h1><a href="{% url 'news:detail' article.pk %}">{{ article.title }}</a></h1>
+								<a href="{% url 'news:rubric' article.rubric.pk %}" class="rubric-link">{{ article.rubric }}</a>
+								{% if article.image %}
+									<br><img src="{{ article.image.url }}" class="index-miniature">
+								{% endif %}
+								<p>{{ article.content|truncatewords:200|safe }}</p>
+								<a href="{% url 'news:detail' article.pk %}" class="article-link">Читать дальше</a>
+								<div class="article-icons">
+									<img src="{% static 'img/views_count.png' %}"><span>{{ article.views }}</span>
+									<a href="{% url 'news:detail' article.pk %}#comments">
+										<img src="{% static 'img/comments_count.png' %}"><span>{{ article.comment_set.all|length }}</span>
+									</a>
+									<a href="{% url 'news:detail' article.pk %}?show=liked_users">
+										<img src="{% static 'img/like-index.png' %}" class="like-index"><span>{{ article.advuser_set.all|length }}</span>
+									</a>
+								</div>
+							</div>
+						{% endfor %}
+						{% if favourites|length > 0 %}
+							{% bootstrap_pagination page size='none' url=all %}
+						{% endif %}
+					</div>
+				{% else %}
+					<div class="information">
+						<h3>Основная информация</h3>
+						<div class="table">
+							<div>Имя пользователя</div><div><b>{{ user_data.username }}</b></div>
+							<div>Дата регистрации</div><div><b>{{ user_data.date_joined }}</b></div>
+							<div>Адрес эл. почты</div><div><b>{% if user_data.email %}{{ user_data.email }}{% else %}Не указано{% endif %}</b></div>
+						</div>
+						<p class="show-hide" id="show-hide-information"><span>Показать/скрыть доп. информацию</span></p>
+						<div class="additionalInformation">
+							<h3>Дополнительная информация</h3>
+							<div class="table">
+								<div>Настоящее имя</div><div><b>{% if user_data.first_name %}{{ user_data.first_name }}{% else %}Не указано{% endif %}</b></div>
+								<div>Настоящая фамилия</div><div><b>{% if user_data.last_name %}{{ user_data.last_name }}{% else %}Не указано{% endif %}</b></div>
+								<div>Страна</div><div><b>{% if user_data.country %}{{ user_data.country }}{% else %}Не указано{% endif %}</b></div>
+								<div>Номер телефона</div><div><b>{% if user_data.phone %}{{ user_data.phone }}{% else %}Не указано{% endif %}</b></div>
+								<div>Дата рождения</div><div><b>{% if user_data.birthday %}{{ user_data.birthday }}{% else %}Не указано{% endif %}</b></div>
+								<div>Просмотры</div><div><b>{{ user_data.views }}</b></div>
+								<div>Публикации</div><div><b>{{ publications_count }}</b></div>
+								<div>Подписчики</div><div><b>{{ subscribes_count }}</b></div>
+								<div>Приватный аккаунт</div><div><b>{% if user_data.private %}Да{% else %}Нет{% endif %}</b></div>
+							</div>
+							{% if user_data.aboutUser %}
+								<div class="aboutUser">
+									<b>О пользователе</b>
+									<p>{{ user_data.aboutUser }}</p>
+								</div>
+							{% endif %}
+						</div>
+					</div>
+				{% endif %}
+				<div class="comment-block"><hr>
+					{% if user.is_authenticated %}
+						{% if user.is_activated %}
+							<h2>Оставьте комментарии пользователю</h2>
+							<form class="comment_form" method="POST" action="{% url 'news:profile' user_data.pk %}">
+								{% csrf_token %}
+								{{ form.as_p }}
+								<div class="comment-button-block">
+									<button type="submit" class="submit-button">Оставить комментарий</button>
+								</div>
+							</form>
+						{% else %}
+							<h4>Вам необходимо подтвердить свою эл.почту, чтобы оставить комментарии.</h4>
+						{% endif %}
+					{% else %}
+						<h4>Вам необходимо <a href="{% url 'news:login' %}?next={% url 'news:profile' user_data.pk %}#comments">авторизоваться</a>, чтобы оставить комментарии.</h4>
+					{% endif %}
+					<div class="comments"><hr>
+						<h2>Комментарии {{ comments|length }}</h2>
+						{% if comments %}
+							<p class="show-hide"><span>Показать/скрыть комментарии</span></p>
+							{% for comment in comments %}
+								{% if not comment.reply %}
+									<div class="comment" id="comment_{{ comment.pk }}">
+										<div class="upper-comment">
+											<div class="avatar">
+												{% if comment.is_active %}
+													<a href="{% url 'news:profile' comment.author.pk %}">
+														{% if comment.author.avatar and comment.author.is_active %}
+															<img src="{{ comment.author.avatar.url }}" class="avatar-img">
+														{% else %}
+															<img src="{% static 'img/user.png' %}" class="avatar-img">
+														{% endif %}
+													</a>
+												{% else %}
+													<img src="{% static 'img/user.png' %}" class="avatar-img">
+												{% endif %}
+											</div>
+											<div class="comment-text">
+												{% if comment.is_active %}
+													<b class="comment-username">
+														<div class="username-text">
+															{% if comment.author.is_active %}
+																<a href="{% url 'news:profile' comment.author.pk %}">{{ comment.author }}</a>
+															{% else %}
+																<span class="deleted-username">(пользователь удален)</span>
+															{% endif %}
+															{% if comment.is_edited %}
+																<span class="edited-comment-text">(изменен)</span>
+															{% endif %}
+															<span class="comment-pub-date">{{ comment.comment_date|timesince }} назад</span>
+														</div>
+														<div class="comment-delete-icons">
+															{% if comment.author.pk is user.pk %}
+																<img src="{% static 'img/edit-icon.png' %}" class="comment-edit-r hover-icon" id="edit_{{ comment.pk }}" title="Редактировать комментарий">
+																<a href="{{ url }}?delete={{ comment.pk }}" class="hover-icon-link">
+																	<img src="{% static 'img/delete-hover.png' %}" class="comment-delete hover-icon" title="Удалить комментарии">
+																</a>
+															{% endif %}
+															{% if user.is_authenticated %}
+																<img src="{% static 'img/reply.png' %}" class="reply" id="reply_{{ comment.pk }}" title="Ответить">
+															{% else %}
+																<a href="{% url 'news:login' %}?next={{ url }}#comments"><img src="{% static 'img/reply.png' %}" class="reply-nw" title="Ответить"></a>
+															{% endif %}
+														</div>
+													</b>
+													<span>{{ comment.comment_text|safe }}</span>
+												{% else %}
+													<div class="deleted-username">(комментарий удален)</div>
+												{% endif %}
+											</div>
+										</div>
+										<div class="lower-comment">
+											{% if comment.author.pk is user.pk %}
+												<form action="{{ url }}?edit={{ comment.pk }}" method="POST" class="edit-comment-form">
+													{% csrf_token %}
+													<input type="hidden" name="object_id" value="{{ user_data.pk }}">
+													<input type="hidden" name="author" value="{{ user.pk }}">
+													<textarea name="comment_text" id="e_{{ comment.pk }}" class="edit-textarea">
+														{{ comment.comment_text }}
+													</textarea>
+													<div class="buttons">
+														<span class="article-link hide-form">СКРЫТЬ</span>
+														<button type="submit" class="submit-button">Редактировать</button>
+													</div>
+												</form>
+											{% endif %}
+											<div class="other-lower">
+												{% if comment.commentuser_set.all|length > 0 %}<hr>
+													<span class="show-hide-replies">
+														<span id="show_{{ comment.pk }}" class="show-replies">Показать все ответы ({{ comment.commentuser_set.all|length }})</span>
+														<span id="hide_{{ comment.pk }}" class="hide-replies">Скрыть ответы ({{ comment.commentuser_set.all|length }})</span>
+													</span>
+													<div class="all-reply-comments">
+														{% for all_reply_comment in comment.commentuser_set.all %}
+															<div class="reply-comment" id="all-reply-comment_{{ reply_comment.pk }}">
+																<div class="avatar">
+																	{% if all_reply_comment.is_active %}
+																		<a href="{% url 'news:profile' all_reply_comment.author.pk %}">
+																			{% if all_reply_comment.author.avatar and all_reply_comment.author.is_active %}
+																				<img src="{{ all_reply_comment.author.avatar.url }}" class="avatar-img">
+																			{% else %}
+																				<img src="{% static 'img/user.png' %}" class="avatar-img">
+																			{% endif %}
+																		</a>
+																	{% else %}
+																		<img src="{% static 'img/user.png' %}" class="avatar-img">
+																	{% endif %}
+																</div>
+																<div class="comment-text">
+																	{% if all_reply_comment.is_active %}
+																		<div class="comment-data" id="comment-data_{{ all_reply_comment.pk }}">
+																			<b class="comment-username">
+																				<div>
+																					{% if all_reply_comment.author.is_active %}
+																						<a href="{% url 'news:profile' all_reply_comment.author.pk %}">{{ all_reply_comment.author }}</a>
+																					{% else %}
+																						<span class="deleted-username">(пользователь удален)</span>
+																					{% endif %}
+																					{% if all_reply_comment.is_edited %}
+																						<span class="edited-comment-text">(изменен)</span>
+																					{% endif %}
+																					<span class="comment-pub-date">{{ all_reply_comment.comment_date|timesince }} назад</span>
+																				</div>
+																				<div class="comment-delete-icons">
+																					{% if all_reply_comment.author.pk is user.pk %}
+																						<img src="{% static 'img/edit-icon.png' %}" class="all-comments-edit hover-icon" id="edit_{{ all_reply_comment.pk }}" title="Редактировать комментарий">
+																						<a href="{{ url }}?delete={{ all_reply_comment.pk }}" class="hover-icon-link">
+																							<img src="{% static 'img/delete-hover.png' %}" class="comment-delete hover-icon" title="Удалить комментарии">
+																						</a>
+																					{% endif %}
+																				</div>
+																			</b>
+																			<span>{{ all_reply_comment.comment_text }}</span>
+																		</div>
+																		{% if all_reply_comment.author.pk is user.pk %}
+																			<form action="{{ url }}?edit={{ all_reply_comment.pk }}" method="POST" class="edit_form" id="all_edit_form_{{ all_reply_comment.pk }}">
+																				{% csrf_token %}
+																				<input type="hidden" name="object_id" value="{{ user_data.pk }}">
+																				<input type="hidden" name="author" value="{{ user.pk }}">
+																				<input type="hidden" name="reply" value="{{ comment.pk }}">
+																				<input type="text" name="comment_text" value="{{ all_reply_comment.comment_text }}">
+																				<span class="hide-edit hide-form" title="Скрыть поле"><img src="{% static 'img/delete.png' %}"></span>
+																				<button type="submit" class="submit-button">Редактировать</button>
+																			</form>
+																		{% endif %}
+																	{% else %}
+																		<div class="deleted-username">(комментарий удален)</div>
+																	{% endif %}
+																</div>
+															</div>
+														{% endfor %}
+													</div>
+												{% endif %}
+											</div>
+											{% if comment.is_active and user.is_authenticated %}
+												<form action="{{ url }}" method="POST" class="reply-form">
+													{% csrf_token %}
+													{{ form.object_id }}
+													{{ form.author }}
+													<input type="hidden" name="reply" value="{{ comment.pk }}">
+													<input type="text" name="comment_text" value="{{ comment.author.username }}, ">
+													<span class="delete-button hide-form" title="Скрыть поле"><img src="{% static 'img/delete.png' %}"></span>
+													<button type="submit" class="submit-button">Ответить</button>
+												</form>
+											{% endif %}
+										</div>
+									</div>
+								{% endif %}
+							{% endfor %}
+						{% endif %}
+					</div>
+				</div>
+				<script>
+					// COMMENT FORM	
+					$("#id_author").attr("placeholder", "Ваше имя");
+					$("#id_comment_text").attr("placeholder", "Текст комментария");
+					$("#id_captcha_1").attr("placeholder", "Введите текст с картинки");
+					$("#id_captcha_1").attr("align", "right");
+					$("#id_captcha_1").attr("class", "captcha");
+					$(".captcha").wrapAll("<div class='captcha-block'></div>");
+					$(".comment_form label").remove();
+
+					// FUNCTIONS
+					$(document).ready(function () {
+						$("#show-hide-information span").click(function () {
+							if ($(".additionalInformation").is(":visible")) {
+								$(".additionalInformation").hide();
+							} else {
+								$(".additionalInformation").show();
+							}
+						});
+						$(".show-hide span").click(function () {
+							if ($(".comment").is(":visible")) {
+								$(".comment").hide();
+							} else {
+								$(".comment").show();
+							}
+						});
+						$(".show-hide-replies span").click(function () {
+							$(".comment .comment-data").show();
+							$(".comment form").hide();
+							var id = this.id;
+							length = this.id.length;
+							id = id.substring(5, length);
+							if ($("#comment_" + id + " div.all-reply-comments").is(":visible")) {
+								$("#comment_" + id + " div.all-reply-comments").hide();
+								$("#show_" + id).show();
+								$("#hide_" + id).hide();
+							} else {
+								$("#comment_" + id + " div.all-reply-comments").show();
+								$("#show_" + id).hide();
+								$("#hide_" + id).show();
+							}
+						});
+						$(".reply").click(function () {
+							$(".comment .comment-data").show();
+							$(".comment form").hide();
+							var id = this.id;
+							length = id.length;
+							id = id.substring(6, length);
+							$(".reply-form").hide();
+							$("#comment_" + id + " .reply-form").css("display", 'grid');
+						});
+						$(".comment-edit-r").click(function () {
+							$(".comment .comment-data").show();
+							$(".comment form").hide();
+							var id = this.id;
+							length = id.length;
+							id = id.substring(5, length);
+							$("#comment_" + id + " .lower-comment .edit-comment-form").show();
+						});
+						$(".comment-edit").click(function () {
+							$(".comment .comment-data").show();
+							$(".comment form").hide();
+							var id = this.id;
+							length = id.length;
+							id = id.substring(5, length);
+							$("#reply-comment_" + id + " .comment-text .comment-data").hide();
+							$("#edit_form_" + id).css("display", "grid");
+						});
+						$(".all-comments-edit").click(function () {
+							$(".comment .comment-data").show();
+							$(".comment form").hide();
+							var id = this.id;
+							length = id.length;
+							id = id.substring(5, length);
+							$("#comment-data_" + id).hide();
+							$("#all_edit_form_" + id).css("display", "grid");
+						});
+						$(".hide-form").click(function () {
+							$(".comment form").hide();
+							$(".comment .comment-data").show();
+						});
+						$("#show-sort").click(function () {
+							if ($(".sort-links a").is(":visible")) {
+								$(".sort-links a").hide();
+							} else {
+								$(".sort-links a").css("display", "block");
+							}
+						});
+					});
+				</script>
+			{% elif not user_data.is_active %}
+				<p class="p">Пользователь удален</p>
+			{% else %}
+				<p class="p">Вы просматриваете приватный аккаунт. Информация о пользователе скрыта</p>
+			{% endif %}
+		</div>
+		<div class="user-avatar">
+			{% if user_data.avatar and user_data.is_active %}
+				<img src="{{ user_data.avatar.url }}" >
+			{% else %}
+				<img src="{% static 'img/user.png' %}" >
+			{% endif %}
+		</div>
+	</div>
+{% endblock %}

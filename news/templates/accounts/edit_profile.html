@@ -1,0 +1,63 @@
+{% extends 'wrapper.html' %}
+
+{% block title %}
+	Изменить профиль
+{% endblock %}
+
+{% block content %}
+	{% load static %}
+	{% load bootstrap4 %}
+	<script>
+		$(document).ready(function () {
+			$("#id_aboutUser").summernote({
+				lang: 'ru-RU',
+			});
+		});
+	</script>
+	<div class="edit-profile">
+		<form action="{% url 'news:edit_profile' %}" method="POST" enctype="multipart/form-data">
+			{% csrf_token %}
+			<div class="table">
+				<h1>{{ user.username }} - Изменить профиль</h1>
+				<div class="table-inner">
+					<div><b>Имя пользователя</b></div><div>
+						{{ form.username }}
+						<small>Обязательное поле</small>
+					</div>
+					<div><b>Адрес эл. почты</b></div><div>
+						{{ form.email }}
+						<small>Обязательное поле</small>
+					</div>
+					<div><b>Номер телефона</b></div><div>{{ form.phone }}</div>
+					<div><b>Настоящее имя</b></div><div>{{ form.first_name }}</div>
+					<div><b>Настоящая фамилия</b></div><div>{{ form.last_name }}</div>
+					<div><b>Дата рождения</b></div><div>{{ form.birthday }}</div>
+					<div><b>Страна</b></div><div>{{ form.country }}</div>
+				</div>
+				<div><b class="aboutMe">Обо мне</b></div><div>{{ form.aboutUser }}</div>
+				<div class="table-inner">
+					<div><span class="checkbox-b">Приватный аккаунт</span></div><div>{{ form.private }}</div>
+				</div><br>
+				<a href="{% url 'news:change_password' %}" class="rubric-link">Изменить пароль</a>
+				<div class="buttons">
+					<a href="{% url 'news:profile' user.pk %}" class="article-link">НАЗАД</a>
+					<a href="{% url 'news:delete_profile' %}" class="delete-btn">УДАЛИТЬ</a>
+					<button type="submit" class="submit-button">Сохранить изменения</button>
+				</div>
+			</div>
+			<div class="user-avatar">
+				{% if user.avatar %}
+					<img src="{{ user.avatar.url }}">
+				{% else %}
+					<img src="{% static 'img/user.png' %}">
+				{% endif %}
+				{{ form.avatar }}
+			</div>
+		</form>
+	</div>
+	<script>
+		$(".user-avatar a").after("<br>");
+		$("#id_birthday").attr("type", "date");
+		$("#id_birthday").attr("value", "{{ user.birthday|date:'Y-m-d' }}");
+	</script>
+{% endblock %}

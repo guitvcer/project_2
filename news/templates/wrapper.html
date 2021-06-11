@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv=X-UA-Compatible>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+	<title>{% block title %}{% endblock %}</title>
+	{% load static %}
+	{% load bootstrap4 %}
+    <link rel="shorcut icon" href="{% static 'img/favicon.png' %}">
+	<link href="http://netdna.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.css" rel="stylesheet">
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"></script> 
+	<script src="http://netdna.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.js"></script> 
+	<link href="http://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.12/summernote.css" rel="stylesheet">
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.12/summernote.js"></script>
+	<link rel="stylesheet" href="{% static 'style.css' %}">
+	<link href="https://fonts.googleapis.com/css?family=Righteous&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Archivo+Narrow|Cuprum|Ubuntu+Condensed&display=swap" rel="stylesheet">
+	<script src="{% static 'summernote-ru-RU.js' %}"></script>
+</head>
+<body>
+	<div id="menu">
+		<form action="{% url 'news:search' %}">
+			<h3>Поиск</h3>
+			<input type="text" name="keyword" placeholder="Введите запрос">
+			<button>Найти</button>
+		</form>
+		<div class="menu-links">
+			<h3>Меню</h3>
+			<a href="{% url 'news:index' %}">Публикации</a>
+			<a href="{% url 'news:users' %}">Пользователи</a>
+			<a href="{% url 'news:users' %}?show=subscribes">Подписки</a>
+			<a href="{% url 'news:add_article' %}">Выложить статью</a>
+		</div>
+		<div class="menu-links">
+			<h3>Рубрики</h3>
+			{% for rubric in rubrics %}
+				<a href="{% url 'news:rubric' rubric.pk %}">{{ rubric }}</a>
+			{% endfor %}
+		</div>
+	</div>
+	<div id="menu-2">
+		{% if user.is_authenticated %}
+			<div>
+				<h3>{{ user.username|truncatechars:15 }}</h3>
+				<a href="{% url 'news:profile' user.pk %}" class="menu-profile-links">Профиль</a>
+				<a href="{% url 'news:edit_profile' %}" class="menu-profile-links">Изменить профиль</a>
+				<a href="{% url 'news:profile' user.pk %}?show=favourites" class="menu-profile-links">Избранное</a>
+				<div class="hr"></div>
+				{% if user.is_staff %}
+					<a href="{% url 'admin:index' %}" class="menu-profile-links">Админ-панель</a>
+					<div class="hr"></div>
+				{% endif %}
+			</div>
+			<div>
+				<a href="{% url 'news:logout' %}" class="menu-profile-exit">Выйти</a>
+			</div>
+		{% else %}
+		<div>
+			<h3>Гость</h3>
+			<a href="{% url 'news:login' %}">Войти</a>
+			<a href="{% url 'news:registration' %}" class="menu-register" style="color: white;">Регистрация</a>
+		</div>
+		{% endif %}
+	</div>
+	<div id="panel">
+		<div>
+			<header>
+				<div class="upper-block">
+					<div class="header-wrapper">
+						<nav>
+							<button class="burger toggle-button">&#9776;</button>
+							<a href="{% url 'news:index' %}">Публикации</a>
+							<a href="{% url 'news:users' %}">Пользователи</a>
+							<a href="{% url 'news:users' %}?show=subscribes">Подписки</a>
+							<a href="{% url 'news:add_article' %}">Выложить статью</a>
+						</nav>
+						<div class="logo"><a href="{% url 'news:index' %}">Project name</a></div>
+						<div class="header-profile-link toggle-button2" id="header-menu">
+							{% if user.avatar %}
+								<img src="{{ user.avatar.url }}">
+							{% else %}
+								<img src="{% static 'img/user2.jpg' %}">
+							{% endif %}
+						</div>
+					</div>
+				</div>
+				<div class="lower-block">
+					<div class="header-wrapper">
+						<div class="search-block">
+							<form action="{% url 'news:search' %}">
+								{{ searchform }}
+								<button type="submit"><img src="{% static 'img/search.png' %}"></button>
+							</form>
+							<div class="dropdown rubrics">
+								<button id="rubrics" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-hospopup="true" aria-expanded="false">Рубрики</button>
+								<div class="dropdown-menu rubrics-dropdown">
+									{% for rubric in rubrics %}
+										<a href="{% url 'news:rubric' rubric.pk %}" class="rubric dropdown-item">{{ rubric }}</a>
+									{% endfor %}
+								</div>
+							</div>
+						</div>
+						{% if user.is_authenticated %}
+							<div class="dropdown user">
+								<div class="dropdown-toggle" id="profile-link" data-toggle="dropdown" role="button" aria-hospopup="true" aria-expanded="false">
+									<div>{{ user.username }}</div>
+									<div>
+										{% if user.avatar %}
+											<img src="{{ user.avatar.url }}">
+										{% else %}
+											<img src="{% static 'img/user.png' %}">
+										{% endif %}
+									</div>
+								</div>
+								<div class="dropdown-menu user-profile-links" id="user-profile-links">
+									<a href="{% url 'news:profile' user.pk %}">Профиль</a>
+									<a href="{% url 'news:edit_profile' %}">Изменить профиль</a>
+									<a href="{% url 'news:profile' user.pk %}?show=favourites">Избранное</a>
+									<div class="hr"></div>
+									{% if user.is_staff %}
+										<a href="{% url 'admin:index' %}">Админ-панель</a>
+										<div class="hr"></div>
+									{% endif %}
+									<a href="{% url 'news:logout' %}">Выйти</a>
+								</div>
+							</div>
+						{% else %}
+							<div class="login-buttons">
+								<a href="{% url 'news:login' %}" class="button-link-login">Войти</a>
+								<a href="{% url 'news:registration' %}" class="button-link-registration">Регистрация</a>
+							</div>
+						{% endif %}
+					</div>
+				</div>
+			</header>
+			<main>
+				{% if messages %}
+					<div class="messes">
+						{% for message in messages %}
+							{% if message.level is 20 %}
+								<div class="mes mes-info">
+									<button>×</button>
+									<div>{{ message|safe }}</div>
+								</div>
+							{% elif message.level is 25 %}
+								<div class="mes mes-success">
+									<button>×</button>
+									<div>{{ message|safe }}</div>
+								</div>
+							{% elif message.level is 30 %}
+								<div class="mes mes-warning">
+									<button>×</button>
+									<div>{{ message|safe }}</div>
+								</div>
+							{% elif message.level is 40 %}
+								<div class="mes mes-danger">
+									<button>×</button>
+									<div>{{ message|safe }}</div>
+								</div>
+							{% endif %}
+						{% endfor %}
+					</div>
+				{% endif %}
+				{% block content %}
+
+				{% endblock %}
+			</main>
+		</div>
+		<footer>
+			<div class="footer-wrapper">
+				<div class="toggle" id="footer-toggle">&#9776; Меню</div>
+				<div class="footer-search">
+					<form action="{% url 'news:search' %}">
+						<input type="text" name="keyword" required placeholder="Поиск">
+						<button type="submit"><img src="{% static 'img/footer-search.png' %}"></button>
+					</form>
+				</div>
+				<div class="about"><a href="#">О сайте</a></div>
+				<div class="copyright">&copy; Project name 2019 г.</div>
+			</div>
+		</footer>
+	</div>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/slideout/1.0.1/slideout.min.js"></script>
+	<script>
+		$(".rubrics").css("height","43px");$("#id_keyword").attr("placeholder","Введите запрос");$(document).ready(function(){$(".mes button").click(function(){var block = $(this).closest(".mes");$(block).slideUp(50);});$(".toggle-button,#footer-toggle").click(function(){if($("#menu").is(":visible")){$("#menu").hide();}else{$("#menu").css("display","flex");}});$(".toggle-button2").click(function(){if($("#menu-2").is(":visible")){$("#menu-2").hide();}else{$("#menu-2").css("display","flex");}});});var slideout = new Slideout({'panel': document.getElementById('panel'),'menu':document.getElementById('menu'),'padding':250,'tolerance':70,});document.querySelector('.toggle-button').addEventListener('click',function(){slideout.toggle();});document.querySelector('#footer-toggle').addEventListener('click',function(){slideout.toggle();});var slideout2 = new Slideout({'panel':document.getElementById('panel'),'menu':document.getElementById('menu-2'),'padding':250,'tolerance':70,'side':'right'});document.querySelector('.toggle-button2').addEventListener('click',function(){slideout2.toggle();});$(".article-title p img").attr("style","");
+	</script>
+</body>
+</html>

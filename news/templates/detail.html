@@ -1,0 +1,483 @@
+{% extends 'wrapper.html' %}
+
+{% block title %}
+	{{ article.title }}
+{% endblock %}
+
+{% block content %}
+	{% load static %}
+	{% load bootstrap4 %}
+	{% url 'news:detail' article.pk as url %}
+	<script>
+		$(document).ready(function () {
+			$("#id_comment_text").summernote({
+				lang: 'ru-RU',
+			});
+			$(".edit-textarea").summernote({
+				lang: 'ru-RU',
+			});
+		});
+	</script>
+	{% if article.image %}
+		<div class="article-image">
+			<img src="{{ article.image.url }}">		
+		</div>
+	{% endif %}
+	<div class="article">
+		<article>
+			{% if show == 'liked_users' %}
+				<div class="like_article_list" id="like_article_list">
+					<h1>{{ article.title }}</h1>
+					<h3 class="likes_count_h3">
+						{% if likes_count == 1 %}
+							Понравилось {{ likes_count }} пользователю
+						{% else %}
+							Понравилось {{ likes_count }} пользователям
+						{% endif %}
+					</h3><br>
+					<a href="{{ url }}" class="article-link">Вернуться к статье</a><br>
+					{% if likes_count > 0 %}
+						{% bootstrap_pagination page size='none' url=all %}
+					{% endif %}
+					<div class="articles">
+						{% for user_data in likes %}
+							<div class="user-block">
+						<div>
+							<a href="{% url 'news:profile' user_data.pk %}">
+								{% if user_data.avatar and user_data.is_active %}
+									<img src="{{ user_data.avatar.url }}">
+								{% else %}
+									<img src="{% static 'img/user.png' %}">
+								{% endif %}<br>
+							</a>
+						</div>
+						<div>
+							{% if user_data.is_active %}
+								<h3><a href="{% url 'news:profile' user_data.pk %}" class="rubric-link">{{ user_data.username|truncatechars:10 }}</a></h3>
+							{% else %}
+								<span class="deleted-username">(пользователь удален)</span>
+							{% endif %}
+						</div>
+						<div>
+							<span>
+								Последний вход<br>
+								<b>
+									{% if user_data.last_login %}
+										{{ user_data.last_login }}
+									{% else %}
+										Никогда
+									{% endif %}
+								</b>
+							</span>
+						</div>
+					</div>
+						{% endfor %}
+					</div>
+					{% if likes_count|length > 1 %}
+						{% bootstrap_pagination page size='none' url=all %}
+					{% endif %}
+				</div>
+			{% else %}
+				<div class="article-detail">
+						<div class="index-author">
+							<div>
+								{% if article.author.avatar and article.author.is_active %}
+									<img src="{{ article.author.avatar.url }}">
+								{% else %}
+									<img src="{% static 'img/user.png' %}">
+								{% endif %}
+							</div>
+							<div>
+								{% if article.author.is_active %}
+									<a href="{% url 'news:profile' article.author.pk %}"><b>{{ article.author }}</b></a>
+								{% else %}
+									<span class="deleted-username">(пользователь удален)</span>
+								{% endif %}
+								&nbsp;{{ article.pub_date|timesince }} назад
+							</div>
+						</div>
+					<h1>{{ article.title }}</h1>
+					<a href="{% url 'news:rubric' article.rubric.pk %}" class="rubric-link">{{ article.rubric }}</a>
+					<p>
+						{{ article.content|safe }}
+					</p>
+					<div class="adaptive-statistic-block">
+						<div>
+							<a href="{% url 'news:like_article' article.pk %}">
+								{% if user in likes %}
+									<img src="{% static 'img/like-index.png' %}">
+								{% else %}
+									<img src="{% static 'img/like-2.png' %}">
+								{% endif %}
+							</a><a href="{{ url }}?show=liked_users"><span>{{ likes_count }}</span></a>
+						</div>
+						<div><img src="{% static 'img/views_count.png' %}"><span>{{ likes_count }}</span></div>
+						<div><img src="{% static 'img/comments_count.png' %}"><span>{{ comments|length }}</span></div>
+					</div>
+					{% if article.author.pk is user.pk %}
+						<a href="{% url 'news:edit_article' article.pk %}" class="article-link edit-article-link">РЕДАКТИРОВАТЬ СТАТЬЮ</a>
+					{% endif %}
+					<div class="comment-block" id="comments"><br>
+						<div class="like-block">
+							<a href="{% url 'news:like_article' article.pk %}" title="Понравилось {{ likes_count }} пользователям" class="like-link">
+								{% if user in likes %}
+									<div class="liked"></div>
+								{% else %}
+									<div class="not-liked"></div>
+								{% endif %}
+							</a>
+							<a href="{{ url }}?show=liked_users" class="rubric-link">{{ likes_count }}</a>
+						</div><hr>
+						{% if user.is_authenticated %}
+							{% if user.is_activated %}
+								<h2>Оставьте комментарии</h2>
+								<form class="comment_form" action="{{ url }}" method="POST">
+									{% csrf_token %}
+									{{ comment_form.as_p }}
+									<div class="comment-button-block">
+										<button type="submit" class="submit-button">Оставить комментарий</button>
+									</div>
+								</form>
+							{% else %}
+								<h4>Вам необходимо подтвердить свою эл.почту, чтобы оставить комментарий.</h4>
+							{% endif %}
+						{% else %}
+							<h4>Вам необходимо <a href="{% url 'news:login' %}?next={{ url }}#comments">авторизоваться</a>, чтобы оставить комментарии.</h4>
+						{% endif %}<hr>
+						<div class="comments">
+							<h2>Комментарии {{ comments|length }}</h2>
+							{% if comments %}
+								<p class="show-hide"><span>Показать/скрыть комментарии</span></p>
+								{% for comment in comments %}
+									{% if not comment.reply %}
+										<div class="comment" id="comment_{{ comment.pk }}">
+											<div class="upper-comment">
+												<div class="avatar">
+													{% if comment.is_active %}
+														<a href="{% url 'news:profile' comment.author.pk %}">
+															{% if comment.author.avatar and comment.author.is_active %}
+																<img src="{{ comment.author.avatar.url }}" class="avatar-img">
+															{% else %}
+																<img src="{% static 'img/user.png' %}" class="avatar-img">
+															{% endif %}
+														</a>
+													{% else %}
+														<img src="{% static 'img/user.png' %}" class="avatar-img">
+													{% endif %}
+												</div>
+												<div class="comment-text">
+													{% if comment.is_active %}
+														<b class="comment-username">
+															<div class="username-text">
+																{% if comment.author.is_active %}
+																	<a href="{% url 'news:profile' comment.author.pk %}">{{ comment.author }}</a>
+																{% else %}
+																	<span class="deleted-username">(пользователь удален)</span>
+																{% endif %}
+																{% if comment.is_edited %}
+																	<span class="edited-comment-text">(изменен)</span>
+																{% endif %}
+																<span class="comment-pub-date">{{ comment.comment_date|timesince }} назад</span>
+															</div>
+															<div class="comment-delete-icons">
+																{% if comment.author.pk is user.pk %}
+																	<img src="{% static 'img/edit-icon.png' %}" class="comment-edit-r hover-icon" id="edit_{{ comment.pk }}" title="Редактировать комментарий">
+																	<a href="{{ url }}?delete={{ comment.pk }}" class="hover-icon-link">
+																		<img src="{% static 'img/delete-hover.png' %}" class="comment-delete hover-icon" title="Удалить комментарии">
+																	</a>
+																{% endif %}
+																{% if user.is_authenticated %}
+																	<img src="{% static 'img/reply.png' %}" class="reply" id="reply_{{ comment.pk }}" title="Ответить">
+																{% else %}
+																	<a href="{% url 'news:login' %}?next={{ url }}#comments"><img src="{% static 'img/reply.png' %}" class="reply-nw" title="Ответить"></a>
+																{% endif %}
+															</div>
+														</b>
+														<span>{{ comment.comment_text|safe }}</span>
+													{% else %}
+														<div class="deleted-username">(комментарий удален)</div>
+													{% endif %}
+												</div>
+											</div>
+											<div class="lower-comment">
+												{% if comment.author.pk is user.pk %}
+													<form action="{{ url }}?edit={{ comment.pk }}" method="POST" class="edit-comment-form">
+														{% csrf_token %}
+														<input type="hidden" name="object_id" value="{{ user_data.pk }}">
+														<input type="hidden" name="author" value="{{ user.pk }}">
+														<textarea name="comment_text" id="e_{{ comment.pk }}" class="edit-textarea">
+															{{ comment.comment_text }}
+														</textarea>
+														<div class="buttons">
+															<span class="article-link hide-form">СКРЫТЬ</span>
+															<button type="submit" class="submit-button">Редактировать</button>
+														</div>
+													</form>
+												{% endif %}
+												<div class="other-lower">
+													{% if comment.commentuser_set.all|length > 0 %}<hr>
+														{% if comment.commentuser_set.all|length > 5 %}
+															<span class="show-hide-replies">
+																<span id="show_{{ comment.pk }}" class="show-replies">Показать все ответы ({{ comment.commentuser_set.all|length }})</span>
+																<span id="hide_{{ comment.pk }}" class="hide-replies">Скрыть ответы ({{ comment.commentuser_set.all|length }})</span>
+															</span>
+														{% endif %}
+														{% if comment.commentuser_set.all|length > 5 %}
+															<div class="all-reply-comments">
+																{% for all_reply_comment in comment.commentuser_set.all %}
+																	<div class="reply-comment" id="all-reply-comment_{{ reply_comment.pk }}">
+																		<div class="avatar">
+																			{% if all_reply_comment.is_active %}
+																				<a href="{% url 'news:profile' all_reply_comment.author.pk %}">
+																					{% if all_reply_comment.author.avatar and all_reply_comment.author.is_active %}
+																						<img src="{{ all_reply_comment.author.avatar.url }}" class="avatar-img">
+																					{% else %}
+																						<img src="{% static 'img/user.png' %}" class="avatar-img">
+																					{% endif %}
+																				</a>
+																			{% else %}
+																				<img src="{% static 'img/user.png' %}">
+																			{% endif %}
+																		</div>
+																		<div class="comment-text">
+																			{% if all_reply_comment.is_active %}
+																				<div class="comment-data" id="comment-data_{{ all_reply_comment.pk }}">
+																					<b class="comment-username">
+																						<div>
+																							{% if all_reply_comment.author.is_active %}
+																								<a href="{% url 'news:profile' all_reply_comment.author.pk %}">{{ all_reply_comment.author }}</a>
+																							{% else %}
+																								<span class="deleted-username">(пользователь удален)</span>
+																							{% endif %}
+																							{% if all_reply_comment.is_edited %}
+																								<span class="edited-comment-text">(изменен)</span>
+																							{% endif %}
+																							<span class="comment-pub-date">{{ all_reply_comment.comment_date|timesince }} назад</span>
+																						</div>
+																						<div class="comment-delete-icons">
+																							{% if all_reply_comment.author.pk is user.pk %}
+																								<img src="{% static 'img/edit-icon.png' %}" class="all-comments-edit hover-icon" id="edit_{{ all_reply_comment.pk }}" title="Редактировать комментарий">
+																								<a href="{{ url }}?delete={{ all_reply_comment.pk }}" class="hover-icon-link">
+																									<img src="{% static 'img/delete-hover.png' %}" class="comment-delete hover-icon" title="Удалить комментарии">
+																								</a>
+																							{% endif %}
+																						</div>
+																					</b>
+																					<span>{{ all_reply_comment.comment_text }}</span>
+																				</div>
+																				{% if all_reply_comment.author.pk is user.pk %}
+																					<form action="{{ url }}?edit={{ all_reply_comment.pk }}" method="POST" class="edit_form" id="all_edit_form_{{ all_reply_comment.pk }}">
+																						{% csrf_token %}
+																						<input type="hidden" name="object_id" value="{{ user_data.pk }}">
+																						<input type="hidden" name="author" value="{{ user.pk }}">
+																						<input type="hidden" name="reply" value="{{ comment.pk }}">
+																						<input type="text" name="comment_text" value="{{ all_reply_comment.comment_text }}">
+																						<span class="hide-edit hide-form" title="Скрыть поле"><img src="{% static 'img/delete.png' %}"></span>
+																						<button type="submit" class="submit-button">Редактировать</button>
+																					</form>
+																				{% endif %}
+																			{% else %}
+																				<div class="deleted-username">(комментарий удален)</div>
+																			{% endif %}
+																		</div>
+																	</div>
+																{% endfor %}
+															</div>
+														{% endif %}
+													{% endif %}
+												</div>
+												{% if comment.is_active and user.is_authenticated %}
+													<form action="{{ url }}" method="POST" class="reply-form">
+														{% csrf_token %}
+														{{ form.object_id }}
+														{{ form.author }}
+														<input type="hidden" name="reply" value="{{ comment.pk }}">
+														<input type="text" name="comment_text" value="{{ comment.author.username }}, ">
+														<span class="delete-button hide-form" title="Скрыть поле"><img src="{% static 'img/delete.png' %}"></span>
+														<button type="submit" class="submit-button">Ответить</button>
+													</form>
+												{% endif %}
+											</div>
+										</div>
+									{% endif %}
+								{% endfor %}
+							{% endif %}
+						</div>
+					</div>
+				</div>
+			{% endif %}
+		</article>
+		<div class="right-block">
+			<div class="statistic-block">
+				<h3>СТАТИСТИКА</h3>
+				<hr>
+				<div class="statistic"><div><b>Автор</b></div><div>
+					{% if article.author.is_active %}
+						<a href="{% url 'news:profile' article.author.pk %}" class="rubric-link">{{ article.author }}</a>
+					{% else %}
+						<span class="deleted-username">(пользователь удален)</span>
+					{% endif %}
+				</div></div>
+				<div class="statistic"><div><b>Опубликована</b></div><div>{{ article.pub_date|timesince }} назад</div></div>
+				<div class="statistic"><div><b>Рубрика</b></div><div><a href="{% url 'news:rubric' article.rubric.pk %}" class="rubric-link">{{ article.rubric }}</a></div></div>
+				<div class="statistic"><div><b>Просмотры</b></div><div>{{ article.views }}</div></div>
+				<div class="statistic"><div><b>Понравилось</b></div><div><a href="{{ url }}?show=liked_users" class="rubric-link ">{{ likes_count }}</a></div></div>
+			</div>
+			<div class="statistic-block index-categories">
+				<h3>РУБРИКИ</h3><hr>
+				{% for rubric in rubrics %}
+					<a href="{% url 'news:rubric' rubric.pk %}">{{ rubric }}</a>
+				{% endfor %}
+			</div>
+			<div class="statistic-block top-authors">
+				<h3>ЛУЧШИЕ АВТОРЫ</h3><hr>
+				{% for i in authors %}
+					<div class="subscribe-profile">
+						<div class="subscribe-avatar">
+							{% if i.avatar %}
+								<img src="{{ i.avatar.url }}">
+							{% else %}
+								<img src="{% static 'img/user.png' %}">
+							{% endif %}
+							<a href="{% url 'news:profile' i.pk %}" class="rubric-link">{{ i.username }}</a>
+						</div>
+						<div class="publication_count" title="{{ i.publications }} публикации">
+							{{ i.article_set.all|length }}
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+			<div class="statistic-block subscribe-profiles">
+				<h3>ПОДПИСКИ</h3><hr>
+				{% if user.is_authenticated %}
+					{% if subscribes %}
+						{% for i in subscribes %}
+							<div class="subscribe-profile">
+								<div>
+									{% if i.avatar and i.is_active %}
+										<img src="{{ i.avatar.url }}">
+									{% else %}
+										<img src="{% static 'img/user.png' %}">
+									{% endif %}
+									{% if i.is_active %}
+										<a href="{% url 'news:profile' i.pk %}" class="rubric-link">{{ i.username }}</a>
+									{% else %}
+										<span class="deleted-username">(пользователь удален)</span>
+									{% endif %}
+								</div>
+							</div>
+						{% endfor %}
+						{% if subscribes_count > 5 %}
+							<div class="show-subscribes">
+								<a href="{% url 'news:users' %}?show=subscribes" class="show-subscribes" align="center">Посмотреть все</a>
+							</div>
+						{% endif %}
+					{% else %}
+						<p>Вы не подписаны ни на одного пользователя</p>
+					{% endif %}
+				{% else %}
+					<p>Вы не вошли в аккаунт</p>
+				{% endif %}
+			</div>
+			<div class="statistic-block read-also">
+				<h3>ЧИТАЮТ СЕЙЧАС</h3><hr>
+				{% for i in articles %}
+					{% if not i.pk == article.pk %}
+						<div class="recomendation">
+							<div>
+								<div><a href="{% url 'news:detail' i.pk %}">{{ i.title }}</a></div>
+								<div class="icons">
+									<div class="detail-icon">
+										<img src="{% static 'img/views_count.png' %}" class="icon"><span>{{ i.views }}</span>
+									</div>
+									<a href="{% url 'news:detail' i.pk %}#comments">
+										<img src="{% static 'img/comments_count.png' %}" class="icon">
+										<span>{{ i.comment_set.all|length }}</span>
+									</a>
+									<a href="{% url 'news:detail' i.pk %}?show=liked_users">
+										<img src="{% static 'img/like-index.png' %}" class="icon like-icon">
+										<span>{{ i.advuser_set.all|length }}</span>
+									</a>
+								</div>
+							</div>
+							<div>
+								{% if i.image %}
+									<div><img src="{{ i.image.url }}" class="article-img"></div>
+								{% endif %}
+							</div>
+						</div>
+					{% endif %}
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+	<script>
+		$("#id_author").attr("placeholder", "Ваше имя");
+		$("#id_comment_text").attr("placeholder", "Текст комментария");
+		$("form label").remove();
+		$(document).ready(function () {
+			$(".show-hide span").click(function () {
+				if ($(".comment").is(":visible")) {
+					$(".comment").hide();
+				} else {
+					$(".comment").show();
+				}
+			});
+			$(".show-hide-replies span").click(function () {
+				$(".comment .comment-data").show();
+				$(".comment form").hide();
+				var id = this.id;
+				length = this.id.length;
+				id = id.substring(5, length);
+				if ($("#comment_" + id + " div.all-reply-comments").is(":visible")) {
+					$("#comment_" + id + " div.all-reply-comments").hide();
+					$("#show_" + id).show();
+					$("#hide_" + id).hide();
+				} else {
+					$("#comment_" + id + " div.all-reply-comments").show();
+					$("#show_" + id).hide();
+					$("#hide_" + id).show();
+				}
+			});
+			$(".reply").click(function () {
+				$(".comment .comment-data").show();
+				$(".comment form").hide();
+				var id = this.id;
+				length = id.length;
+				id = id.substring(6, length);
+				$(".reply-form").hide();
+				$("#comment_" + id + " .reply-form").css("display", 'grid');
+			});
+			$(".comment-edit-r").click(function () {
+				$(".comment .comment-data").show();
+				$(".comment form").hide();
+				var id = this.id;
+				length = id.length;
+				id = id.substring(5, length);
+				$("#comment_" + id + " .lower-comment .edit-comment-form").show();
+			});
+			$(".comment-edit").click(function () {
+				$(".comment .comment-data").show();
+				$(".comment form").hide();
+				var id = this.id;
+				length = id.length;
+				id = id.substring(5, length);
+				$("#reply-comment_" + id + " .comment-text .comment-data").hide();
+				$("#edit_form_" + id).css("display", "grid");
+			});
+			$(".all-comments-edit").click(function () {
+				$(".comment .comment-data").show();
+				$(".comment form").hide();
+				var id = this.id;
+				length = id.length;
+				id = id.substring(5, length);
+				$("#comment-data_" + id).hide();
+				$("#all_edit_form_" + id).css("display", "grid");
+			});
+			$(".hide-form").click(function () {
+				$(".comment form").hide();
+				$(".comment .comment-data").show();
+			});
+		});
+	</script>
+{% endblock %}

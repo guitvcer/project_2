@@ -1,0 +1,23 @@
+{% extends 'wrapper.html' %}
+
+{% block title %}
+	Восстановление аккаунта
+{% endblock %}
+
+{% block content %}
+	{% load bootstrap4 %}
+	<div class="add-article">
+		<h1>Восстановление аккаунта</h1>
+		{% for error in errors %}
+			<span class="error-text">{{ error }}</span><br><br>
+		{% endfor %}
+		<form action="{% url 'news:request_recovery' %}" method="POST">
+			{% csrf_token %}
+			{% bootstrap_form form %}
+			<div class="buttons">
+				<a href="{% url 'news:index' %}" class="article-link">НАЗАД</a>
+				<button type="submit" class="submit-button">Отправить</button>
+			</div>
+		</form>
+	</div>
+{% endblock %}

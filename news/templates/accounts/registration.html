@@ -1,0 +1,25 @@
+{% extends 'wrapper.html' %}
+
+{% block title %}
+	Регистрация
+{% endblock %}
+
+{% block content %}
+	{% load static %}
+	{% load bootstrap4 %}
+	<div class="register_form">
+		<h1>Регистрация</h1>
+		<form method="POST" id="register_form">
+			{% csrf_token %}
+			{% bootstrap_form form layout='horizontal' %}
+			<div class="buttons">
+				<button type="submit" class="submit-button">Зарегистрироваться</button>
+			</div>
+			<p>Или зарегистрируйтесь через соц. сети</p>
+			<div class="social-links">
+				<a href="{% url 'social:begin' 'google-oauth2' %}" title="Зарегистрироваться через Google"><img src="{% static 'img/google.png' %}"></a>
+				<a href="{% url 'social:begin' 'vk-oauth2' %}" title="Войти через ВКонтакте"><img src="{% static 'img/vk.png' %}"></a>
+			</div>
+		</form>
+	</div>
+{% endblock %}

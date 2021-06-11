@@ -1,0 +1,13 @@
+{% extends 'wrapper.html' %}
+
+{% block title %}
+	403! У Вас нет прав просматривать эту страницу
+{% endblock %}
+
+{% block content %}
+	<article class="error-article">
+		<h1>403!</h1>
+		<h2>У Вас нет прав просматривать эту страницу.</h2>
+		<a href="{% url 'news:index' %}" class="rubric-link">На главную</a>
+	</article>
+{% endblock %}

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Вход</title>
+	{% load static %}
+	<link rel="stylesheet" href="{% static 'style.css' %}">	
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</head>
+<body class="login_body">
+	{% if user.is_authenticated %}
+		<div>
+			<h1 class="login_h1">Вы уже вошли в аккаунт</h1>
+			<p>Вернуться на <a href="{% url 'news:index' %}">главную</a>страницу.</p>
+		</div>
+	{% else %}
+		<form method="POST" class="login_form">
+			{% csrf_token %}
+			<h1 class="login_h1">Вход</h1>
+			{{ form.as_p }}
+			<button type="submit">Войти</button>
+			<a href="{% url 'news:reset_password' %}">Забыли пароль?</a>
+			<p>Вход через соц. сети</p>
+			<div class="social-links">
+				<a href="{% url 'social:begin' 'google-oauth2' %}" title="Войти через Google"><img src="{% static 'img/google.png' %}"></a>
+				<a href="{% url 'social:begin' 'vk-oauth2' %}" title="Войти через ВКонтакте"><img src="{% static 'img/vk.png' %}"></a>
+			</div>
+			<p>Нет аккаунта? <a href="{% url 'news:registration' %}">Зарегистрируйтесь!</a><br><br>
+			<a href="{% url 'news:request_recovery' %}">Восстановить аккаунт</a><br><br>
+			<a href="{% url 'news:index' %}">На главную</a></p>	
+		</form>
+	{% endif %}	
+	<script>
+		$("label").after("<br>");
+	</script>
+</body>
+</html>

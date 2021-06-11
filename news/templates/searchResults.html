@@ -1,0 +1,313 @@
+{% extends 'wrapper.html' %}
+
+{% block title %}
+	{{ key }} - Результаты поиска ({{ search_count }})
+{% endblock %}
+
+{% block content %}
+	{% load static %}
+	{% load bootstrap4 %}
+	<div class="index">
+		<div class="articles">
+			{% url 'news:search' as url %}
+			<div class="sort-links profile-links" id="sort-links">
+				{% if sort == 'users' %}
+					<a href="{{ url }}{{ keyword }}" id="all">ВСЕ</a>
+					<a href="{{ url }}{{ keyword }}&sort=users" id="users" class="active">ПОЛЬЗОВАТЕЛИ</a>
+					<a href="{{ url }}{{ keyword }}&sort=publications" id="publications">ПУБЛИКАЦИИ</a>
+				{% elif sort == 'publications' %}
+					<a href="{{ url }}{{ keyword }}" id="all">ВСЕ</a>
+					<a href="{{ url }}{{ keyword }}&sort=users" id="users">ПОЛЬЗОВАТЕЛИ</a>
+					<a href="{{ url }}{{ keyword }}&sort=publications" id="publications" class="active">ПУБЛИКАЦИИ</a>
+				{% else %}
+					<a href="{{ url }}{{ keyword }}" id="all" class="active">ВСЕ</a>
+					<a href="{{ url }}{{ keyword }}&sort=users" id="users">ПОЛЬЗОВАТЕЛИ</a>
+					<a href="{{ url }}{{ keyword }}&sort=publications" id="publications">ПУБЛИКАЦИИ</a>
+				{% endif %}
+			</div>
+			<h1 class="search_count">Результаты по запросу "{{ key }}" - {{ search_count }}</h1>
+			{% if sort == 'users' %}
+				<div class="users-result">
+					<h2>Пользователи {{ users_count }}</h2>
+					{% bootstrap_pagination page size='none' url=all %}
+					<div class="users">
+						<div class="articles">
+							<div class="users-flex">
+								{% for user_data in users_search %}
+									<div class="user-block">
+										<div>
+											<a href="{% url 'news:profile' user_data.pk %}">
+												{% if user_data.avatar and user_data.is_active %}
+													<img src="{{ user_data.avatar.url }}">
+												{% else %}
+													<img src="{% static 'img/user.png' %}">
+												{% endif %}<br>
+											</a>
+										</div>
+										<div>
+											{% if user_data.is_active %}
+												<h3><a href="{% url 'news:profile' user_data.pk %}" class="rubric-link">{{ user_data.username|truncatechars:10 }}</a></h3>
+											{% else %}
+												<span class="deleted-username">(пользователь удален)</span>
+											{% endif %}
+										</div>
+										<div>
+											<span>
+												Последний вход<br>
+												<b>
+													{% if user_data.last_login %}
+														{{ user_data.last_login }}
+													{% else %}
+														Никогда
+													{% endif %}
+												</b>
+											</span>
+										</div>
+									</div>
+								{% endfor %}
+							</div>
+						</div>
+					</div>
+					{% bootstrap_pagination page size='none' url=all %}
+					<div class="show-hide"><a href="{{ url }}{{ keyword }}">Посмотреть все результаты</a></div>
+				</div>
+			{% elif sort == 'publications' %}
+				<div class="publications-result">
+					<div class="articles-search-results search-result-block">
+						<h2>Публикации {{ articles_count }}</h2>
+						{% bootstrap_pagination page size='none' url=all %}
+						<div class="articles">
+							{% for article in articles_search %}
+								<div class="article-title">
+									<div class="index-author">
+										<div>
+											{% if article.author.avatar and article.author.is_actieve %}
+												<img src="{{ article.author.avatar.url }}">
+											{% else %}
+												<img src="{% static 'img/user.png' %}">
+											{% endif %}
+										</div>
+										<div>
+											{% if article.author.is_active %}
+												<a href="{% url 'news:profile' article.author.pk %}"><b>{{ article.author }}</b></a>
+											{% else %}
+												<span class="deleted-username">(пользователь удален)</span>
+											{% endif %}
+											{{ article.pub_date }}
+										</div>
+									</div>
+									<h1><a href="{% url 'news:detail' article.pk %}">{{ article.title }}</a></h1>
+									<a href="{% url 'news:rubric' article.rubric.pk %}" class="rubric-link">{{ article.rubric }}</a>
+									{% if article.image %}
+										<br><img src="{{ article.image.url }}" class="index-miniature">
+									{% endif %}
+									<p>{{ article.content|truncatewords:200|safe }}</p>
+									<a href="{% url 'news:detail' article.pk %}" class="article-link">Читать дальше</a>
+									<div class="article-icons">
+										<img src="{% static 'img/views_count.png' %}"><span>{{ article.views }}</span>
+										<a href="{% url 'news:detail' article.pk %}#comments">
+											<img src="{% static 'img/comments_count.png' %}"><span>{{ article.comment_set.all|length }}</span>
+										</a>
+										<a href="{% url 'news:detail' article.pk %}?show=liked_users">
+											<img src="{% static 'img/like-index.png' %}" class="like-index"><span>{{ article.advuser_set.all|length }}</span>
+										</a>
+									</div>
+								</div>
+							{% endfor %}
+						</div>
+						{% bootstrap_pagination page size='none' url=all %}
+						<div class="show-hide"><a href="{{ url }}{{ keyword }}">Посмотреть все результаты</a></div>
+					</div>
+				</div>
+			{% else %}
+				<div class="all-results">
+					{% if rubrics_search %}
+						<div class="rubric-search-results search-result-block">
+							<h2>Рубрики {{ rubrics_search|length }}</h2>
+							{% for rubric_search in rubrics_search %}
+								<a href="{% url 'news:rubric' rubric_search.pk %}" class="rubric-link">{{ rubric_search }}</a><br>
+							{% endfor %}
+						</div>
+					{% endif %}
+					{% if users_search %}
+						<div class="users-search-results search-result-block">
+							<h2>Пользователи {{ users_search|length }}</h2>
+							<div class="users-flex">
+								{% for user_data in users_search|slice:":4" %}
+									<div class="user-block">
+										<div>
+											<a href="{% url 'news:profile' user_data.pk %}">
+												{% if user_data.avatar and user_data.is_active %}
+													<img src="{{ user_data.avatar.url }}">
+												{% else %}
+													<img src="{% static 'img/user.png' %}">
+												{% endif %}<br>
+											</a>
+										</div>
+										<div>
+											{% if user_data.is_active %}
+												<h3><a href="{% url 'news:profile' user_data.pk %}" class="rubric-link">{{ user_data.username|truncatechars:10 }}</a></h3>
+											{% else %}
+												<span class="deleted-username">(пользователь удален)</span>
+											{% endif %}
+										</div>
+										<div>
+											<span>
+												Последний вход<br>
+												<b>
+													{% if user_data.last_login %}
+														{{ user_data.last_login }}
+													{% else %}
+														Никогда
+													{% endif %}
+												</b>
+											</span>
+										</div>
+									</div>
+								{% endfor %}
+							</div>
+							{% if users_search|length > 4 %}
+								<p class="show-hide" id="show-users"><a href="{{ url }}{{ keyword }}&sort=users">Посмотреть все</a></p>
+							{% endif %}
+						</div>
+					{% endif %}
+					{% if articles_search %}
+						<div class="articles-search-results search-result-block">
+							<h2>Публикации {{ articles_search|length }}</h2>
+							<div class="articles">
+								{% for article in articles_search|slice:":5" %}
+									<div class="article-title">
+										<div class="index-author">
+											<div>
+												{% if article.author.avatar and article.author.is_active %}
+													<img src="{{ article.author.avatar.url }}">
+												{% else %}
+													<img src="{% static 'img/user.png' %}">
+												{% endif %}
+											</div>
+											<div>
+												{% if article.author.is_active %}
+													<a href="{% url 'news:profile' article.author.pk %}"><b>{{ article.author }}</b></a>
+												{% else %}
+													<span class="deleted-username">(пользователь удален)</span>
+												{% endif %}
+												{{ article.pub_date }}
+											</div>
+										</div>
+										<h1><a href="{% url 'news:detail' article.pk %}">{{ article.title }}</a></h1>
+										<a href="{% url 'news:rubric' article.rubric.pk %}" class="rubric-link">{{ article.rubric }}</a>
+										{% if article.image %}
+											<br><img src="{{ article.image.url }}" class="index-miniature">
+										{% endif %}
+										<p>{{ article.content|truncatewords:200|safe }}</p>
+										<a href="{% url 'news:detail' article.pk %}" class="article-link">Читать дальше</a>
+										<div class="article-icons">
+											<img src="{% static 'img/views_count.png' %}"><span>{{ article.views }}</span>
+											<a href="{% url 'news:detail' article.pk %}#comments">
+												<img src="{% static 'img/comments_count.png' %}"><span>{{ article.comment_set.all|length }}</span>
+											</a>
+											<a href="{% url 'news:detail' article.pk %}?show=liked_users">
+												<img src="{% static 'img/like-index.png' %}" class="like-index"><span>{{ article.advuser_set.all|length }}</span>
+											</a>
+										</div>
+									</div>
+								{% endfor %}
+								{% if articles_search|length > 5 %}
+									<p class="show-hide" id="show-articles"><a href="{{ url }}{{ keyword }}&sort=publications">Посмотреть все</a></p>
+								{% endif %}
+							</div>
+						</div>
+					{% endif %}
+				</div>
+			{% endif %}
+		</div>
+		<div class="right-block">
+			<div class="statistic-block read-also">
+				<h3>ЧИТАЮТ СЕЙЧАС</h3><hr>
+				{% for i in articles %}
+					{% if not i.pk == article.pk %}
+						<div class="recomendation">
+							<div>
+								<div><a href="{% url 'news:detail' i.pk %}">{{ i.title }}</a></div>
+								<div class="icons">
+									<div class="detail-icon">
+										<img src="{% static 'img/views_count.png' %}" class="icon"><span>{{ i.views }}</span>
+									</div>
+									<a href="{% url 'news:detail' i.pk %}#comments">
+										<img src="{% static 'img/comments_count.png' %}" class="icon">
+										<span>{{ i.comment_set.all|length }}</span>
+									</a>
+									<a href="{% url 'news:detail' i.pk %}?show=liked_users">
+										<img src="{% static 'img/like-index.png' %}" class="icon like-icon">
+										<span>{{ i.advuser_set.all|length }}</span>
+									</a>
+								</div>
+							</div>
+							<div>
+								{% if i.image %}
+									<div><img src="{{ i.image.url }}" class="article-img"></div>
+								{% endif %}
+							</div>
+						</div>
+					{% endif %}
+				{% endfor %}
+			</div>
+			<div class="statistic-block index-categories">
+				<h3>РУБРИКИ</h3><hr>
+				{% for rubric in rubrics %}
+					<a href="{% url 'news:rubric' rubric.pk %}">{{ rubric }}</a>
+				{% endfor %}
+			</div>
+			<div class="statistic-block subscribe-profiles">
+				<h3>ПОДПИСКИ</h3><hr>
+				{% if user.is_authenticated %}
+					{% if subscribes %}
+						{% for i in subscribes %}
+							<div class="subscribe-profile">
+								<div>
+									{% if i.avatar and i.is_active %}
+										<img src="{{ i.avatar.url }}">
+									{% else %}
+										<img src="{% static 'img/user.png' %}">
+									{% endif %}
+									{% if i.is_active %}
+										<a href="{% url 'news:profile' i.pk %}" class="rubric-link">{{ i.username }}</a>
+									{% else %}
+										<span class="deleted-username">(пользователь удален)</span>
+									{% endif %}
+								</div>
+							</div>
+						{% endfor %}
+						{% if subscribes_count > 5 %}
+							<div class="show-subscribes">
+								<a href="{% url 'news:users' %}?show=subscribes" class="show-subscribes" align="center">Посмотреть все</a>
+							</div>
+						{% endif %}
+					{% else %}
+						<p>Вы не подписаны ни на одного пользователя</p>
+					{% endif %}
+				{% else %}
+					<p>Вы не вошли в аккаунт</p>
+				{% endif %}
+			</div>
+			<div class="statistic-block top-authors">
+				<h3>ЛУЧШИЕ АВТОРЫ</h3><hr>
+				{% for i in authors %}
+					<div class="subscribe-profile">
+						<div class="subscribe-avatar">
+							{% if i.avatar %}
+								<img src="{{ i.avatar.url }}">
+							{% else %}
+								<img src="{% static 'img/user.png' %}">
+							{% endif %}
+							<a href="{% url 'news:profile' i.pk %}" class="rubric-link">{{ i.username }}</a>
+						</div>
+						<div class="publication_count" title="{{ i.publications }} публикации">
+							{{ i.publications }}
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+{% endblock %}

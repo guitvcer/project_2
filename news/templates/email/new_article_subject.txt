@@ -1,0 +1,1 @@
+Новая статья от {{ user.username }} - Project name

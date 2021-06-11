@@ -1,0 +1,6 @@
+Project name
+
+Чтобы восстановить аккаунт, перейдите по этой ссылке:
+{{ address }}{% url 'news:recovery_profile' sign=sign %}
+
+С уважением, администрация сайта Project name
